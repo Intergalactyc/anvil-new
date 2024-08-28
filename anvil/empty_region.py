@@ -25,12 +25,15 @@ class EmptyRegion:
     x: :class:`int`
     z: :class:`int`
     """
-    __slots__ = ('chunks', 'x', 'z')
-    def __init__(self, x: int, z: int):
+    __slots__ = ('chunks', 'x', 'z', 'max_height')
+    def __init__(self, x: int, z: int, max_height: int = 319):
         # Create a 1d list for the 32x32 chunks
         self.chunks: List[EmptyChunk] = [None] * 1024
         self.x = x
         self.z = z
+
+        self.max_height = max_height
+
 
     def inside(self, x: int, y: int, z: int, chunk: bool=False) -> bool:
         """
@@ -46,7 +49,7 @@ class EmptyRegion:
         factor = 32 if chunk else 512
         rx = x // factor
         rz = z // factor
-        return not (rx != self.x or rz != self.z or y < -63 or y > 319)
+        return not (rx != self.x or rz != self.z or y < -64 or y > self.max_height)
 
     def get_chunk(self, x: int, z: int) -> EmptyChunk:
         """
@@ -109,7 +112,7 @@ class EmptyRegion:
             raise OutOfBoundsCoordinates(f'Chunk ({x}, {z}) is not inside this region')
         chunk = self.chunks[z % 32 * 32 + x % 32]
         if chunk is None:
-            chunk = EmptyChunk(x, z)
+            chunk = EmptyChunk(x, z, self.max_height)
             self.add_chunk(chunk)
         chunk.add_section(section, replace)
 
@@ -136,7 +139,7 @@ class EmptyRegion:
         cz = z // 16
         chunk = self.get_chunk(cx, cz)
         if chunk is None:
-            chunk = EmptyChunk(cx, cz)
+            chunk = EmptyChunk(cx, cz, self.max_height)
             self.add_chunk(chunk)
         chunk.set_block(block, x % 16, y, z % 16)
 
